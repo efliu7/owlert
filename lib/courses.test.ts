@@ -44,7 +44,7 @@ describe('course preferences', () => {
       { ...course, id: '3', name: 'Gamma' },
     ];
     await db.courses.bulkPut(courses);
-    await updateCoursePreferences('2', { color: '#0f766e', pinned: false });
+    await updateCoursePreferences('2', { color: '#a1b2c3', pinned: false });
     await reorderCourse('2', '1', 'before');
     await saveCourseAssignments(courses[1]!, [], 200);
     db.close();
@@ -56,7 +56,7 @@ describe('course preferences', () => {
       ).map((c) => c.id),
     ).toEqual(['2', '1', '3']);
     expect(await db.coursePreferences.get('2')).toMatchObject({
-      color: '#0f766e',
+      color: '#a1b2c3',
       pinned: false,
       sortOrder: 0,
     });

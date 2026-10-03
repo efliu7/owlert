@@ -189,7 +189,7 @@
 }
 .chevron {
   flex-shrink: 0;
-  color: var(--course-accent);
+  color: var(--course-ink);
   transition: transform 150ms ease;
 }
 .chevronExpanded {
@@ -222,7 +222,7 @@
   overflow-wrap: anywhere;
 }
 .course a {
-  color: var(--course-accent);
+  color: var(--course-ink);
   text-decoration: none;
 }
 .course a:hover {
@@ -265,7 +265,7 @@
   padding: 4px 8px;
   border-radius: 6px;
   background: color-mix(in srgb, var(--course-accent) 9%, white);
-  color: var(--course-accent);
+  color: var(--course-ink);
   margin-top: 10px;
 }
 .assignments li .noDueDate {
@@ -326,7 +326,7 @@
 .pinnedBadge {
   display: inline-block;
   font-weight: 600;
-  color: var(--course-accent);
+  color: var(--course-ink);
   margin-right: 8px;
 }
 .toolbar {
@@ -353,7 +353,7 @@
   background: #ece5f4;
 }
 .iconButton[aria-pressed='true'] {
-  color: var(--course-accent, #4f2683);
+  color: var(--course-ink, #4f2683);
   background: color-mix(in srgb, var(--course-accent, #4f2683) 14%, white);
 }
 .iconButton:focus-visible,
@@ -369,7 +369,9 @@
   position: fixed;
   inset: auto;
   margin: 0;
-  width: 208px;
+  width: min(240px, calc(100vw - 16px));
+  max-height: calc(100dvh - 16px);
+  overflow-y: auto;
   padding: 14px;
   border: 1px solid #dfd5eb;
   border-radius: 12px;
@@ -399,6 +401,71 @@
 .colorSwatch[aria-pressed='true'] {
   outline: 2px solid #242033;
   outline-offset: 2px;
+}
+.customColor {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #eee9f3;
+}
+.customColor fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.customColor legend,
+.hexLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #51485f;
+  margin-bottom: 10px;
+}
+.customColor :global(.react-colorful) {
+  width: 100%;
+  height: 160px;
+}
+.customColor fieldset:disabled :global(.react-colorful) {
+  pointer-events: none;
+  opacity: 0.5;
+}
+.hexLabel {
+  display: block;
+  margin: 14px 0 6px;
+}
+.hexRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.colorPreview {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #dfd5eb;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+.hexInput {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #dfd5eb;
+  border-radius: 6px;
+  padding: 8px;
+  font: inherit;
+  font-size: 13px;
+}
+.hexInput:focus-visible {
+  outline: 2px solid #4f2683;
+  outline-offset: 2px;
+}
+.customColor .hexError {
+  margin-top: 6px;
+  color: #9f1239;
+  font-size: 11px;
+}
+.customColor .syncButton {
+  width: 100%;
+  margin-top: 12px;
+  font-size: 13px;
 }
 .displayDialog {
   width: min(440px, calc(100vw - 24px));

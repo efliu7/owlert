@@ -1,6 +1,8 @@
 import { useRef, useState, type CSSProperties, type DragEvent } from 'react';
 import type { Assignment, Course, CoursePreferences } from '../../lib/db';
 import { COURSE_COLORS } from '../../lib/courses';
+import { courseTextColor } from '../../lib/colors';
+import { HexColorPicker } from 'react-colorful';
 import Icon from './Icon';
 import styles from './App.module.css';
 
@@ -33,10 +35,23 @@ export default function CourseCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [draftColor, setDraftColor] = useState('#4f2683');
+  const [hexInput, setHexInput] = useState('#4f2683');
   const [position, setPosition] = useState({ left: 0, top: 0 });
   const palette = useRef<HTMLDivElement>(null);
   const colorButton = useRef<HTMLButtonElement>(null);
   const paletteId = `course-color-${course.id}`;
+  const color = preferences.color ?? '#4f2683';
+  const validHex = /^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(hexInput);
+  function selectDraft(value: string) {
+    setDraftColor(value);
+    setHexInput(value);
+  }
+  function applyColor(value: string) {
+    onChange({ color: value });
+    palette.current?.hidePopover();
+    colorButton.current?.focus();
+  }
   return (
     <section
       className={`${styles.course} ${dragging ? styles.draggingCourse : ''} ${dropPlacement === 'before' ? styles.dropBefore : dropPlacement === 'after' ? styles.dropAfter : ''}`}
@@ -45,7 +60,10 @@ export default function CourseCard({
       onDragOver={onDragOver}
       onDrop={onDrop}
       style={
-        { '--course-accent': preferences.color ?? '#4f2683' } as CSSProperties
+        {
+          '--course-accent': color,
+          '--course-ink': courseTextColor(color),
+        } as CSSProperties
       }
     >
       <div className={styles.courseHeader}>
@@ -97,17 +115,7 @@ export default function CourseCard({
             popoverTarget={paletteId}
             disabled={disabled}
             onClick={() => {
-              const bounds = colorButton.current!.getBoundingClientRect();
-              setPosition({
-                left: Math.max(
-                  8,
-                  Math.min(bounds.right - 208, window.innerWidth - 216),
-                ),
-                top: Math.max(
-                  8,
-                  Math.min(bounds.bottom + 8, window.innerHeight - 120),
-                ),
-              });
+              selectDraft(color);
             }}
           >
             <Icon name="palette" />
@@ -131,9 +139,30 @@ export default function CourseCard({
         popover="auto"
         className={styles.colorPopover}
         style={position}
-        onToggle={() =>
-          setPaletteOpen(!!palette.current?.matches(':popover-open'))
-        }
+        onToggle={() => {
+          const open = !!palette.current?.matches(':popover-open');
+          setPaletteOpen(open);
+          if (open) {
+            const bounds = colorButton.current!.getBoundingClientRect();
+            const popup = palette.current!.getBoundingClientRect();
+            setPosition({
+              left: Math.max(
+                8,
+                Math.min(
+                  bounds.right - popup.width,
+                  window.innerWidth - popup.width - 8,
+                ),
+              ),
+              top: Math.max(
+                8,
+                Math.min(
+                  bounds.bottom + 8,
+                  window.innerHeight - popup.height - 8,
+                ),
+              ),
+            });
+          }
+        }}
       >
         <p>Course color</p>
         <div
@@ -148,17 +177,82 @@ export default function CourseCard({
               className={styles.colorSwatch}
               title={color.name}
               aria-label={color.name}
-              aria-pressed={(preferences.color ?? '#4f2683') === color.value}
+              aria-pressed={
+                preferences.color === color.value ||
+                (!preferences.color && color.value === '#4f2683')
+              }
               disabled={disabled}
               style={{ background: color.value }}
               onClick={() => {
-                onChange({ color: color.value });
-                palette.current?.hidePopover();
-                colorButton.current?.focus();
+                applyColor(color.value);
               }}
             />
           ))}
         </div>
+        <form
+          className={styles.customColor}
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!disabled && validHex) applyColor(draftColor);
+          }}
+        >
+          <fieldset disabled={disabled}>
+            <legend>Custom color</legend>
+            <HexColorPicker
+              color={draftColor}
+              onChange={selectDraft}
+              aria-label={`Custom color for ${course.name}`}
+            />
+            <label className={styles.hexLabel} htmlFor={`${paletteId}-hex`}>
+              Hex color
+            </label>
+            <div className={styles.hexRow}>
+              <span
+                className={styles.colorPreview}
+                style={{ background: draftColor }}
+                aria-hidden="true"
+              />
+              <input
+                id={`${paletteId}-hex`}
+                value={hexInput}
+                className={styles.hexInput}
+                maxLength={7}
+                spellCheck={false}
+                autoComplete="off"
+                placeholder="#4f2683"
+                aria-invalid={!validHex}
+                aria-describedby={!validHex ? `${paletteId}-error` : undefined}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setHexInput(value);
+                  if (/^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(value)) {
+                    const normalized =
+                      value.length === 4
+                        ? `#${value
+                            .slice(1)
+                            .split('')
+                            .map((part) => part + part)
+                            .join('')}`
+                        : value;
+                    setDraftColor(normalized.toLowerCase());
+                  }
+                }}
+              />
+            </div>
+            {!validHex && (
+              <p id={`${paletteId}-error`} className={styles.hexError}>
+                Use # followed by 3 or 6 hex digits.
+              </p>
+            )}
+            <button
+              type="submit"
+              className={styles.syncButton}
+              disabled={disabled || !validHex}
+            >
+              Apply color
+            </button>
+          </fieldset>
+        </form>
       </div>
       <div
         className={styles.courseBody}

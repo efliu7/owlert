@@ -59,7 +59,7 @@ Other commands:
 
 ## Course preferences
 
-Click a course header's **palette icon** to choose its color, or its **pin icon**
+Click a course header's **palette icon** to choose a preset or custom color, or its **pin icon**
 to pin it. The **Course display icon** beside Sync courses opens a separate menu
 for including or excluding courses. Hold and drag a course header to reorder it;
 the drop indicator appears only while dragging. Pinned courses stay first, and
@@ -67,7 +67,10 @@ dragging reorders courses within the pinned or unpinned group. You can also focu
 a header and press **Alt+Up/Down** to move it. Before a custom order is saved,
 courses sort alphabetically; newly discovered courses follow the saved order.
 Colors apply to course headers,
-borders, links, and due-date badges.
+borders, links, and due-date badges. The custom picker uses react-colorful and
+supports pointer and keyboard controls. You can also enter a 3- or 6-digit hex
+color and click **Apply color**. Dismissing the picker discards unapplied changes.
+Light colors retain their accents while text uses a darker shade for readability.
 
 Excluded courses disappear from the briefing and their assignments are skipped
 during both sync and page capture. They remain in Course display, and previously
