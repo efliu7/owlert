@@ -1,0 +1,84 @@
+:global(*) {
+  box-sizing: border-box;
+}
+:global(body) {
+  margin: 0;
+  background: #f6f4fa;
+  color: #242033;
+  font-family: system-ui, sans-serif;
+}
+:global(h1),
+:global(h2),
+:global(p) {
+  margin: 0;
+}
+.panel {
+  padding: 28px 20px;
+  min-width: 280px;
+}
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.header h1 {
+  font-size: 24px;
+  letter-spacing: -0.8px;
+}
+.header p {
+  color: #686177;
+  font-size: 12px;
+  margin-top: 4px;
+}
+.mark {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  background: #4f2683;
+  color: white;
+  border-radius: 14px;
+  font-weight: 800;
+  font-size: 26px;
+  border-bottom: 4px solid #e5b54a;
+}
+.card {
+  background: white;
+  border: 1px solid #e5dfed;
+  border-radius: 18px;
+  padding: 24px;
+}
+.badge {
+  display: inline-block;
+  color: #4f2683;
+  background: #f0e9f8;
+  border-radius: 20px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+.card h2 {
+  font-size: 23px;
+  line-height: 1.25;
+  letter-spacing: -0.5px;
+  margin-bottom: 14px;
+}
+.card p {
+  color: #686177;
+  font-size: 14px;
+  line-height: 1.65;
+}
+.card .note {
+  border-top: 1px solid #eee9f3;
+  margin-top: 24px;
+  padding-top: 18px;
+  font-size: 12px;
+}
+.footer {
+  margin-top: 24px;
+  color: #686177;
+  font-size: 11px;
+  text-align: center;
+}
