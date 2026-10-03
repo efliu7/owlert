@@ -4,10 +4,23 @@ import {
   assignmentListCourseId,
   isAssignmentCapture,
 } from '../lib/assignments';
+import { saveCourseAssignments } from '../lib/courses';
 import { db } from '../lib/db';
 
 export default defineBackground(() => {
   browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message?.type === 'courses:can-capture') {
+      const courseId = sender.url ? assignmentListCourseId(sender.url) : null;
+      if (!courseId) {
+        sendResponse({ included: false });
+        return;
+      }
+      void db.coursePreferences.get(courseId).then(
+        (preferences) => sendResponse({ included: !preferences?.excluded }),
+        () => sendResponse({ included: false }),
+      );
+      return true;
+    }
     if (message?.type !== 'assignments:capture') return;
     const snapshot: unknown = message.snapshot;
     if (
@@ -19,29 +32,23 @@ export default defineBackground(() => {
       return;
     }
     const capturedAt = Date.now();
-    void db
-      .transaction('rw', db.courses, db.assignments, async () => {
-        await db.courses.put({
-          ...snapshot.course,
-          lastCapturedAt: capturedAt,
-        });
-        await db.assignments.bulkPut(
-          snapshot.assignments.map((item) => ({
-            ...item,
-            key: `${snapshot.course.id}:${item.id}`,
-            courseId: snapshot.course.id,
-            capturedAt,
-          })),
-        );
-      })
-      .then(
-        () => sendResponse({ ok: true }),
-        () =>
-          sendResponse({
-            ok: false,
-            error: 'Could not save assignments locally',
-          }),
-      );
+    void saveCourseAssignments(
+      snapshot.course,
+      snapshot.assignments.map((item) => ({
+        ...item,
+        key: `${snapshot.course.id}:${item.id}`,
+        courseId: snapshot.course.id,
+        capturedAt,
+      })),
+      capturedAt,
+    ).then(
+      () => sendResponse({ ok: true }),
+      () =>
+        sendResponse({
+          ok: false,
+          error: 'Could not save assignments locally',
+        }),
+    );
     return true;
   });
   void browser.sidePanel

@@ -57,6 +57,24 @@ Other commands:
 - `run format`: format source files with Prettier.
 - `run test` / `run test:watch`: Vitest parser tests against sanitized assignment markup.
 
+## Course preferences
+
+Click a course header's **palette icon** to choose its color, or its **pin icon**
+to pin it. The **Course display icon** beside Sync courses opens a separate menu
+for including or excluding courses. Hold and drag a course header to reorder it;
+the drop indicator appears only while dragging. Pinned courses stay first, and
+dragging reorders courses within the pinned or unpinned group. You can also focus
+a header and press **Alt+Up/Down** to move it. Before a custom order is saved,
+courses sort alphabetically; newly discovered courses follow the saved order.
+Colors apply to course headers,
+borders, links, and due-date badges.
+
+Excluded courses disappear from the briefing and their assignments are skipped
+during both sync and page capture. They remain in Course display, and previously
+saved assignments are kept. Include the course again and sync to refresh it.
+Order, colors, and pins are stored separately on this device and survive syncs and browser
+restarts.
+
 ## Project structure
 
 - `wxt.config.ts`: extension configuration and permissions; WXT generates the manifest.

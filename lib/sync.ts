@@ -1,5 +1,6 @@
 import { BRIGHTSPACE_ORIGIN } from './assignments';
 import { db, type Assignment, type Course } from './db';
+import { saveCourseAssignments } from './courses';
 
 type Fetch = typeof globalThis.fetch;
 interface Version {
@@ -30,6 +31,7 @@ export interface SyncResult {
   courses: number;
   assignments: number;
   failures: string[];
+  skipped: number;
 }
 
 async function json<T>(path: string, fetcher: Fetch): Promise<T> {
@@ -152,12 +154,24 @@ export function syncCourses(
   return activeSync;
 }
 
-async function performSync(
+export async function performSync(
   onProgress: (progress: SyncProgress) => void,
+  fetcher: Fetch = fetch,
 ): Promise<SyncResult> {
   onProgress({ completed: 0, total: 0 });
-  const { courses, le } = await discoverCourses();
-  const result: SyncResult = { courses: 0, assignments: 0, failures: [] };
+  const { courses, le } = await discoverCourses(fetcher);
+  await db.transaction('rw', db.courses, async () => {
+    for (const course of courses) {
+      const existing = await db.courses.get(course.id);
+      await db.courses.put({ ...existing, ...course });
+    }
+  });
+  const result: SyncResult = {
+    courses: 0,
+    assignments: 0,
+    failures: [],
+    skipped: 0,
+  };
   for (let index = 0; index < courses.length; index++) {
     const course = courses[index]!;
     onProgress({
@@ -166,16 +180,20 @@ async function performSync(
       courseName: course.name,
     });
     try {
+      if ((await db.coursePreferences.get(course.id))?.excluded) {
+        result.skipped++;
+        continue;
+      }
       const folders = await json<Folder[]>(
         `/d2l/api/le/${le}/${course.id}/dropbox/folders/`,
-        fetch,
+        fetcher,
       );
       const capturedAt = Date.now();
       const assignments = folderAssignments(course.id, folders, capturedAt);
-      await db.transaction('rw', db.courses, db.assignments, async () => {
-        await db.courses.put({ ...course, lastCapturedAt: capturedAt });
-        await db.assignments.bulkPut(assignments);
-      });
+      if (!(await saveCourseAssignments(course, assignments, capturedAt))) {
+        result.skipped++;
+        continue;
+      }
       result.courses++;
       result.assignments += assignments.length;
     } catch (error) {

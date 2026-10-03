@@ -13,12 +13,17 @@ export default defineContentScript({
     let saving = false;
     async function capture() {
       if (saving || ctx.isInvalid) return;
-      const snapshot = captureAssignments(document, location.href);
-      if (!snapshot) return;
-      const next = JSON.stringify(snapshot);
-      if (next === fingerprint) return;
       saving = true;
+      let captured = false;
       try {
+        const permission = await browser.runtime.sendMessage({
+          type: 'courses:can-capture',
+        });
+        if (!permission?.included || ctx.isInvalid) return;
+        const snapshot = captureAssignments(document, location.href);
+        if (!snapshot) return;
+        const next = JSON.stringify(snapshot);
+        if (next === fingerprint) return;
         const response = await browser.runtime.sendMessage({
           type: 'assignments:capture',
           snapshot,
@@ -26,11 +31,12 @@ export default defineContentScript({
         if (!response?.ok)
           throw new Error(response?.error ?? 'Could not save assignments');
         fingerprint = next;
+        captured = true;
       } catch (error) {
         console.error('Owlert assignment capture failed:', error);
       } finally {
         saving = false;
-        if (!ctx.isInvalid && fingerprint === next) void capture();
+        if (!ctx.isInvalid && captured) void capture();
       }
     }
     const observer = new MutationObserver(() => {

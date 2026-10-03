@@ -1,13 +1,66 @@
 import styles from './App.module.css';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../../lib/db';
-import { useState } from 'react';
+import { db, type CoursePreferences } from '../../lib/db';
+import { Fragment, useState, useRef } from 'react';
 import { syncCourses } from '../../lib/sync';
+import {
+  reorderCourse,
+  sortCourses,
+  updateCoursePreferences,
+} from '../../lib/courses';
+import CourseCard from './CourseCard';
+import Icon from './Icon';
 
 export default function App() {
+  const courseDialog = useRef<HTMLDialogElement>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState('');
   const [syncErrors, setSyncErrors] = useState<string[]>([]);
+  const [savingPreference, setSavingPreference] = useState(false);
+  const [preferenceError, setPreferenceError] = useState('');
+  const [draggedCourse, setDraggedCourse] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<{
+    id: string;
+    placement: 'before' | 'after';
+  } | null>(null);
+  const [reorderStatus, setReorderStatus] = useState('');
+  function endDrag() {
+    setDraggedCourse(null);
+    setDropTarget(null);
+  }
+  async function moveCourse(
+    sourceId: string,
+    targetId: string,
+    placement: 'before' | 'after',
+  ) {
+    endDrag();
+    setSavingPreference(true);
+    setPreferenceError('');
+    try {
+      await reorderCourse(sourceId, targetId, placement);
+      setReorderStatus('Course order saved.');
+    } catch {
+      setPreferenceError('Could not save course order. Please try again.');
+    } finally {
+      setSavingPreference(false);
+    }
+  }
+  async function updatePreferences(
+    courseId: string,
+    patch: Omit<Partial<CoursePreferences>, 'courseId'>,
+  ) {
+    setSavingPreference(true);
+    setPreferenceError('');
+    try {
+      await updateCoursePreferences(courseId, patch);
+    } catch {
+      setPreferenceError(
+        'Could not save course preferences. Please try again.',
+      );
+    } finally {
+      setSavingPreference(false);
+    }
+  }
   async function sync() {
     setSyncing(true);
     setSyncErrors([]);
@@ -21,10 +74,12 @@ export default function App() {
       });
       setSyncStatus(
         result.courses
-          ? `Synced ${result.assignments} assignments across ${result.courses} courses.`
+          ? `Synced ${result.assignments} assignments across ${result.courses} courses.${result.skipped ? ` Skipped ${result.skipped} excluded courses.` : ''}`
           : result.failures.length
             ? 'Sync could not complete.'
-            : 'No accessible courses found.',
+            : result.skipped
+              ? 'All courses are excluded. Include a course using the Course display icon to sync it.'
+              : 'No accessible courses found.',
       );
       setSyncErrors(result.failures);
     } catch (error) {
@@ -38,15 +93,26 @@ export default function App() {
   }
   const data = useLiveQuery(async () => {
     try {
-      const [courses, assignments] = await Promise.all([
+      const [courses, assignments, preferences] = await Promise.all([
         db.courses.toArray(),
         db.assignments.toArray(),
+        db.coursePreferences.toArray(),
       ]);
-      return { courses, assignments, error: false };
+      return { courses, assignments, preferences, error: false };
     } catch {
-      return { courses: [], assignments: [], error: true };
+      return { courses: [], assignments: [], preferences: [], error: true };
     }
   });
+  const preferences = new Map(
+    data?.preferences.map((item) => [item.courseId, item]),
+  );
+  const courses = sortCourses(data?.courses ?? [], data?.preferences ?? []);
+  const includedCourses = courses.filter(
+    (course) => !preferences.get(course.id)?.excluded,
+  );
+  const pinnedCount = includedCourses.filter(
+    (course) => preferences.get(course.id)?.pinned,
+  ).length;
   return (
     <main className={styles.panel}>
       <header className={styles.header}>
@@ -61,15 +127,29 @@ export default function App() {
       <section className={styles.card} aria-labelledby="welcome-heading">
         <span className={styles.badge}>Your course briefing</span>
         <h2 id="welcome-heading">Assignments</h2>
-        <button
-          className={styles.syncButton}
-          disabled={syncing}
-          onClick={() => {
-            void sync();
-          }}
-        >
-          {syncing ? 'Syncing…' : 'Sync courses'}
-        </button>
+        <div className={styles.toolbar}>
+          <button
+            className={styles.syncButton}
+            disabled={syncing}
+            onClick={() => {
+              void sync();
+            }}
+          >
+            {syncing ? 'Syncing…' : 'Sync courses'}
+          </button>
+          <button
+            type="button"
+            className={styles.iconButton}
+            title="Course display"
+            aria-label="Manage course display"
+            aria-haspopup="dialog"
+            aria-controls="course-display"
+            disabled={!courses.length}
+            onClick={() => courseDialog.current?.showModal()}
+          >
+            <Icon name="settings" />
+          </button>
+        </div>
         <p className={styles.syncStatus} role="status">
           {syncStatus ||
             'Log into Western Brightspace, then sync all accessible courses.'}
@@ -87,6 +167,7 @@ export default function App() {
             </ul>
           </div>
         )}
+        {preferenceError && <p role="alert">{preferenceError}</p>}
         {!data ? (
           <p role="status">Loading saved assignments…</p>
         ) : data.error ? (
@@ -107,84 +188,113 @@ export default function App() {
         ) : (
           <>
             <p>Saved on this device from your Brightspace courses.</p>
+            {includedCourses.length === 0 && (
+              <p className={styles.emptyCourse}>
+                All courses are excluded. Use the Course display icon to include
+                one.
+              </p>
+            )}
             <div className={styles.courses}>
-              {data.courses.map((course) => {
-                const assignments = data.assignments.filter(
-                  (item) => item.courseId === course.id,
-                );
-                return (
-                  <details
-                    className={styles.course}
-                    key={course.id}
-                    aria-label={course.name}
-                  >
-                    <summary className={styles.courseSummary}>
-                      <div className={styles.courseHeading}>
-                        <h3>{course.name}</h3>
-                        <span className={styles.courseCount}>
-                          {assignments.length}{' '}
-                          {assignments.length === 1
-                            ? 'assignment'
-                            : 'assignments'}
-                        </span>
-                      </div>
-                      <svg
-                        className={styles.chevron}
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        aria-hidden="true"
-                      >
-                        <path d="m6 9 6 6 6-6" />
-                      </svg>
-                    </summary>
-                    <div className={styles.courseBody}>
-                      <div className={styles.courseMeta}>
-                        <a href={course.url} target="_blank" rel="noreferrer">
-                          Open course ↗
-                        </a>
-                        <p className={styles.timestamp}>
-                          Last captured{' '}
-                          {course.lastCapturedAt
-                            ? new Date(course.lastCapturedAt).toLocaleString()
-                            : 'unknown'}
-                        </p>
-                      </div>
-                      {assignments.length === 0 ? (
-                        <p className={styles.emptyCourse}>
-                          No assignments found for this course.
-                        </p>
-                      ) : (
-                        <ul className={styles.assignments}>
-                          {assignments.map((item) => (
-                            <li key={item.key}>
-                              <a
-                                href={item.url}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                {item.title}
-                              </a>
-                              <p
-                                className={
-                                  item.dueLabel
-                                    ? styles.dueDate
-                                    : styles.noDueDate
-                                }
-                              >
-                                {item.dueLabel ?? 'No due date shown'}
-                              </p>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  </details>
-                );
-              })}
+              <p id="course-reorder-help" className={styles.srOnly}>
+                Hold and drag a course header to reorder it within its pinned or
+                unpinned group. With a header focused, press Alt and the Up or
+                Down arrow to move it.
+              </p>
+              <span className={styles.srOnly} role="status">
+                {reorderStatus}
+              </span>
+              {includedCourses.map((course, index) => (
+                <Fragment key={course.id}>
+                  {pinnedCount > 0 &&
+                    (index === 0 || index === pinnedCount) && (
+                      <h3 className={styles.courseDivider}>
+                        {index === 0 && <Icon name="pin" />}
+                        {index === 0 ? 'Pinned courses' : 'Other courses'}
+                      </h3>
+                    )}
+                  <CourseCard
+                    course={course}
+                    assignments={data.assignments.filter(
+                      (item) => item.courseId === course.id,
+                    )}
+                    preferences={
+                      preferences.get(course.id) ?? { courseId: course.id }
+                    }
+                    disabled={savingPreference}
+                    dragging={draggedCourse === course.id}
+                    dropPlacement={
+                      dropTarget?.id === course.id ? dropTarget.placement : null
+                    }
+                    onDragStart={(event) => {
+                      setDraggedCourse(course.id);
+                      setReorderStatus('');
+                      event.dataTransfer.effectAllowed = 'move';
+                      event.dataTransfer.setData('text/plain', course.id);
+                    }}
+                    onDragEnd={endDrag}
+                    onDragOver={(event) => {
+                      if (
+                        !draggedCourse ||
+                        draggedCourse === course.id ||
+                        !!preferences.get(draggedCourse)?.pinned !==
+                          !!preferences.get(course.id)?.pinned
+                      ) {
+                        setDropTarget(null);
+                        return;
+                      }
+                      event.preventDefault();
+                      event.dataTransfer.dropEffect = 'move';
+                      const bounds =
+                        event.currentTarget.getBoundingClientRect();
+                      setDropTarget({
+                        id: course.id,
+                        placement:
+                          event.clientY < bounds.top + bounds.height / 2
+                            ? 'before'
+                            : 'after',
+                      });
+                    }}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      if (
+                        !draggedCourse ||
+                        dropTarget?.id !== course.id ||
+                        savingPreference
+                      ) {
+                        endDrag();
+                        return;
+                      }
+                      void moveCourse(
+                        draggedCourse,
+                        course.id,
+                        dropTarget.placement,
+                      );
+                    }}
+                    onMove={(direction) => {
+                      if (savingPreference) return;
+                      const group = includedCourses.filter(
+                        (item) =>
+                          !!preferences.get(item.id)?.pinned ===
+                          !!preferences.get(course.id)?.pinned,
+                      );
+                      const target =
+                        group[
+                          group.findIndex((item) => item.id === course.id) +
+                            direction
+                        ];
+                      if (target)
+                        void moveCourse(
+                          course.id,
+                          target.id,
+                          direction === -1 ? 'before' : 'after',
+                        );
+                    }}
+                    onChange={(patch) => {
+                      void updatePreferences(course.id, patch);
+                    }}
+                  />
+                </Fragment>
+              ))}
             </div>
             <p className={styles.note}>
               Sync reads all assignments returned by Brightspace. Synced dates
@@ -195,6 +305,54 @@ export default function App() {
           </>
         )}
       </section>
+      <dialog
+        ref={courseDialog}
+        id="course-display"
+        className={styles.displayDialog}
+        aria-labelledby="display-title"
+      >
+        <div className={styles.dialogHeader}>
+          <h2 id="display-title">Course display</h2>
+          <button
+            type="button"
+            className={styles.iconButton}
+            aria-label="Close course display"
+            onClick={() => courseDialog.current?.close()}
+          >
+            <Icon name="close" />
+          </button>
+        </div>
+        <p>
+          Choose the courses to show and sync. Hidden courses keep their saved
+          assignments.
+        </p>
+        {preferenceError && <p role="alert">{preferenceError}</p>}
+        <div className={styles.displayList}>
+          {courses.map((course) => (
+            <label key={course.id} className={styles.displayRow}>
+              <span
+                className={styles.colorDot}
+                style={{
+                  background: preferences.get(course.id)?.color ?? '#4f2683',
+                }}
+                aria-hidden="true"
+              />
+              <span>{course.name}</span>
+              <input
+                type="checkbox"
+                aria-label={`Include ${course.name}`}
+                disabled={savingPreference}
+                checked={!preferences.get(course.id)?.excluded}
+                onChange={(event) => {
+                  void updatePreferences(course.id, {
+                    excluded: !event.target.checked,
+                  });
+                }}
+              />
+            </label>
+          ))}
+        </div>
+      </dialog>
       <footer className={styles.footer}>
         Built for students. Stored on your device.
       </footer>
