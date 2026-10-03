@@ -43,10 +43,16 @@ session has expired.
 
 ## Next meaningful milestone
 
-Retain normalized assignment snapshots, compare successful syncs, and build a
-"Since your last check" feed with exact deadline changes and source links.
-Preserve actual API timestamps rather than comparing formatted date labels.
-Do not treat a failed or incomplete scan as evidence of an assignment deletion.
+The first change-tracking milestone is implemented: per-course sync baselines,
+normalized API deadlines, and a "Since your last check" feed for new assignments,
+renames, and deadline changes. Changes retain before/after values and source
+links; students can acknowledge individual changes or all visible changes and
+revisit seen history. The first successful sync establishes a starting point.
+Page captures and failed syncs cannot overwrite the baseline, and absent
+assignments do not produce deletion alerts.
+
+Next, validate this feed with real course updates and extend collection to
+assignment requirements and attachments where useful.
 Add configurable Chrome notifications on top of reliable change detection and
 deadline scheduling.
 

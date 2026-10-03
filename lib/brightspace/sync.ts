@@ -1,6 +1,6 @@
-import { BRIGHTSPACE_ORIGIN } from './assignments';
-import { db, type Assignment, type Course } from './db';
-import { saveCourseAssignments } from './courses';
+import { BRIGHTSPACE_ORIGIN } from '../assignments/capture';
+import { db, type SyncedAssignment, type Course } from '../storage/db';
+import { saveSyncedAssignments } from '../assignments/changes';
 
 type Fetch = typeof globalThis.fetch;
 interface Version {
@@ -108,9 +108,23 @@ export function folderAssignments(
   courseId: string,
   folders: Folder[],
   capturedAt: number,
-): Assignment[] {
+): SyncedAssignment[] {
   if (!Array.isArray(folders))
     throw new Error('Unexpected assignments response.');
+  const ids = new Set<number>();
+  for (const folder of folders) {
+    if (
+      !folder ||
+      !Number.isSafeInteger(folder.Id) ||
+      folder.Id <= 0 ||
+      ids.has(folder.Id) ||
+      typeof folder.IsHidden !== 'boolean' ||
+      (folder.DueDate !== null && typeof folder.DueDate !== 'string')
+    ) {
+      throw new Error('Unexpected assignment details from Brightspace.');
+    }
+    ids.add(folder.Id);
+  }
   return folders
     .filter((folder) => !folder.IsHidden)
     .map((folder) => {
@@ -122,7 +136,7 @@ export function folderAssignments(
       ) {
         throw new Error('Unexpected assignment details from Brightspace.');
       }
-      const due = folder.DueDate ? new Date(folder.DueDate) : null;
+      const due = folder.DueDate !== null ? new Date(folder.DueDate) : null;
       if (due && !Number.isFinite(due.getTime()))
         throw new Error('Unexpected due date from Brightspace.');
       return {
@@ -131,6 +145,7 @@ export function folderAssignments(
         courseId,
         title: folder.Name.trim(),
         capturedAt,
+        dueAt: due ? due.toISOString() : null,
         // Group assignments require the user's group ID. Open the list to select the group safely.
         url:
           folder.GroupTypeId != null
@@ -190,7 +205,7 @@ export async function performSync(
       );
       const capturedAt = Date.now();
       const assignments = folderAssignments(course.id, folders, capturedAt);
-      if (!(await saveCourseAssignments(course, assignments, capturedAt))) {
+      if (!(await saveSyncedAssignments(course, assignments, capturedAt))) {
         result.skipped++;
         continue;
       }

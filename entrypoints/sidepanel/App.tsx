@@ -1,15 +1,16 @@
 import styles from './App.module.css';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, type CoursePreferences } from '../../lib/db';
+import { db, type CoursePreferences } from '../../lib/storage/db';
 import { Fragment, useState, useRef } from 'react';
-import { syncCourses } from '../../lib/sync';
+import { syncCourses } from '../../lib/brightspace/sync';
 import {
   reorderCourse,
   sortCourses,
   updateCoursePreferences,
-} from '../../lib/courses';
+} from '../../lib/courses/preferences';
 import CourseCard from './CourseCard';
 import Icon from './Icon';
+import ChangeFeed from './ChangeFeed';
 
 export default function App() {
   const courseDialog = useRef<HTMLDialogElement>(null);
@@ -93,14 +94,31 @@ export default function App() {
   }
   const data = useLiveQuery(async () => {
     try {
-      const [courses, assignments, preferences] = await Promise.all([
-        db.courses.toArray(),
-        db.assignments.toArray(),
-        db.coursePreferences.toArray(),
-      ]);
-      return { courses, assignments, preferences, error: false };
+      const [courses, assignments, preferences, changes, baselines] =
+        await Promise.all([
+          db.courses.toArray(),
+          db.assignments.toArray(),
+          db.coursePreferences.toArray(),
+          db.assignmentChanges.toArray(),
+          db.courseBaselines.toArray(),
+        ]);
+      return {
+        courses,
+        assignments,
+        preferences,
+        changes,
+        baselines,
+        error: false,
+      };
     } catch {
-      return { courses: [], assignments: [], preferences: [], error: true };
+      return {
+        courses: [],
+        assignments: [],
+        preferences: [],
+        changes: [],
+        baselines: [],
+        error: true,
+      };
     }
   });
   const preferences = new Map(
@@ -168,6 +186,22 @@ export default function App() {
           </div>
         )}
         {preferenceError && <p role="alert">{preferenceError}</p>}
+        {data && !data.error && includedCourses.length > 0 && (
+          <ChangeFeed
+            changes={data.changes.filter((change) =>
+              includedCourses.some((course) => course.id === change.courseId),
+            )}
+            preferences={preferences}
+            trackedCourses={
+              data.baselines.filter((baseline) =>
+                includedCourses.some(
+                  (course) => course.id === baseline.courseId,
+                ),
+              ).length
+            }
+            totalCourses={includedCourses.length}
+          />
+        )}
         {!data ? (
           <p role="status">Loading saved assignments…</p>
         ) : data.error ? (
@@ -299,8 +333,9 @@ export default function App() {
             <p className={styles.note}>
               Sync reads all assignments returned by Brightspace. Synced dates
               use your device’s timezone; page captures keep Brightspace’s
-              displayed dates. Saved items remain until change tracking is
-              added.
+              displayed dates. Change tracking compares successful syncs;
+              visiting a page does not generate change alerts. Assignments
+              absent from a sync remain saved and are not marked as deleted.
             </p>
           </>
         )}

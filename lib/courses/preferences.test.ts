@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
 import 'fake-indexeddb/auto';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { db, type Course } from './db';
+import { db, type Course } from '../storage/db';
 import {
   saveCourseAssignments,
   sortCourses,
   updateCoursePreferences,
   reorderCourse,
-} from './courses';
-import { performSync } from './sync';
+} from './preferences';
+import { performSync } from '../brightspace/sync';
 
 const course: Course = {
   id: '123',

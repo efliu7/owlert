@@ -1,7 +1,11 @@
 import { useRef, useState, type CSSProperties, type DragEvent } from 'react';
-import type { Assignment, Course, CoursePreferences } from '../../lib/db';
-import { COURSE_COLORS } from '../../lib/courses';
-import { courseTextColor } from '../../lib/colors';
+import type {
+  Assignment,
+  Course,
+  CoursePreferences,
+} from '../../lib/storage/db';
+import { COURSE_COLORS } from '../../lib/courses/preferences';
+import { courseTextColor } from '../../lib/ui/colors';
 import { HexColorPicker } from 'react-colorful';
 import Icon from './Icon';
 import styles from './App.module.css';

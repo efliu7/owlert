@@ -1,6 +1,6 @@
 import { browser } from 'wxt/browser';
 import { defineContentScript } from 'wxt/utils/define-content-script';
-import { captureAssignments } from '../lib/assignments';
+import { captureAssignments } from '../lib/assignments/capture';
 
 export default defineContentScript({
   matches: [

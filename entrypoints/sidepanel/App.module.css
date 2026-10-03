@@ -527,3 +527,113 @@
   border-radius: 50%;
   flex-shrink: 0;
 }
+.changeFeed {
+  margin: 20px 0;
+  padding: 18px 0;
+  border-top: 1px solid #e5dfed;
+  border-bottom: 1px solid #e5dfed;
+}
+.changeHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.changeHeading h3 {
+  margin: 0;
+  font-size: 16px;
+}
+.card .changeStatus,
+.card .changeHint {
+  font-size: 12px;
+  margin-top: 8px;
+}
+.changeList {
+  display: grid;
+  gap: 12px;
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+}
+.changeItem {
+  border: 1px solid #e5dfed;
+  border-left: 4px solid var(--course-accent);
+  border-radius: 10px;
+  padding: 12px;
+  background: #faf8fd;
+  overflow-wrap: anywhere;
+}
+.changeItem > a {
+  color: var(--course-ink);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.changeItem > a:hover {
+  text-decoration: underline;
+}
+.card .changeCourse {
+  font-size: 11px;
+  margin-bottom: 6px;
+}
+.card .changeKind {
+  color: #242033;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+.changeValues {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px 10px;
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 10px 0;
+}
+.changeValues dt {
+  color: #686177;
+}
+.changeValues dd {
+  margin: 0;
+}
+.changeFooter {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.changeFooter time {
+  color: #686177;
+  font-size: 11px;
+}
+.seenButton {
+  border: 1px solid #dfd5eb;
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: white;
+  color: #4f2683;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.seenButton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.seenButton:focus-visible,
+.seenHistory summary:focus-visible,
+.changeItem > a:focus-visible {
+  outline: 2px solid #4f2683;
+  outline-offset: 2px;
+}
+.seenHistory {
+  margin-top: 14px;
+}
+.seenHistory summary {
+  font-size: 12px;
+  color: #686177;
+  cursor: pointer;
+}

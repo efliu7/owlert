@@ -6,8 +6,9 @@ A Chrome Manifest V3 extension for a local-first Western Brightspace course
 briefing. Log into Western Brightspace and click **Sync courses** in Owlert to
 collect assignments across all active, accessible courses. Visiting an Assignments
 page also captures its visible rows. Captures are saved locally
-and remain available between browser sessions. Change detection and reminders
-are not implemented yet.
+and remain available between browser sessions. Successful syncs track new
+assignments, renamed assignments, and exact deadline changes. Chrome notifications
+and scheduled reminders are not implemented yet.
 
 ## Requirements
 
@@ -55,7 +56,7 @@ to try the release build. `zip` produces a distributable archive in `.output/`.
 Other commands:
 
 - `run format`: format source files with Prettier.
-- `run test` / `run test:watch`: Vitest parser tests against sanitized assignment markup.
+- `run test` / `run test:watch`: Vitest parser, sync, preference, and change-tracking tests.
 
 ## Course preferences
 
@@ -84,9 +85,12 @@ restarts.
 - `entrypoints/background.ts`: service worker; enables toolbar-click side panel opening.
 - `entrypoints/assignments.content.ts`: collects visible assignment rows on Western Brightspace.
 - `entrypoints/sidepanel/`: React UI and CSS Modules.
-- `lib/db.ts`: Dexie course and assignment schema for extension contexts.
-- `lib/assignments.ts`: assignment parser and message validation.
-- `lib/sync.ts`: authenticated course discovery and assignment sync through Brightspace's APIs.
+- `lib/assignments/`: page capture, message validation, sync baselines, and change history.
+- `lib/brightspace/`: authenticated course discovery and assignment sync through Brightspace's APIs.
+- `lib/courses/`: course preferences, ordering, and page-capture storage.
+- `lib/storage/`: shared Dexie database and stored data types for extension contexts.
+- `lib/ui/`: shared color and readability utilities.
+- Tests live beside their corresponding modules in each feature folder.
 - `vitest.config.ts`: test runner configuration.
 
 Stack: WXT, TypeScript, React, CSS Modules, Dexie/IndexedDB, Vitest, and Prettier.
@@ -111,8 +115,28 @@ open assignment page after loading or updating the extension to capture its rows
 Saved assignments are updated by course and assignment ID. Missing rows are not
 deleted, since they may be on another page or temporarily unavailable.
 
+## Assignment change tracking
+
+The **Since your last check** feed shows new assignments, name changes, and
+deadline changes with previous and current values and a Brightspace source link.
+The first successful sync for each course establishes a baseline without alerts,
+including after upgrading from an older version of Owlert. Subsequent successful
+syncs compare normalized API timestamps, so timezone and date-format changes do
+not create false alerts. Existing assignments and course preferences survive the
+database upgrade.
+
+Use **Mark as seen** or **Mark all as seen** to acknowledge changes. Seen changes
+remain available in the collapsible history, and acknowledgements survive browser
+restarts. Excluded courses' changes are hidden until the course is included again.
+
+Page captures update saved assignment displays while preserving known API due
+timestamps. They never establish or overwrite the sync baseline. Failed course
+requests and invalid responses leave that course's baseline unchanged; successful
+courses can still update. Missing assignments are retained without deletion
+alerts. Baseline updates, saved assignments, and change events commit together.
+
 ## Next milestone
 
-Keep capture history and compare a later capture with its baseline to show title
-and deadline changes. Confirm completeness before interpreting missing assignments
-as deletions.
+Validate change tracking with real course updates, then add configurable Chrome
+notifications and deadline reminders. Instruction and attachment changes require
+additional retrieval. See PRODUCT.md for the broader product direction.

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest';
-import { captureAssignments, isAssignmentCapture } from './assignments';
+import { captureAssignments, isAssignmentCapture } from './capture';
 
 const pageUrl =
   'https://westernu.brightspace.com/d2l/lms/dropbox/user/folders_list.d2l?ou=123';

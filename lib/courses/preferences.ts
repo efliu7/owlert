@@ -1,4 +1,9 @@
-import { db, type Course, type CoursePreferences, type Assignment } from './db';
+import {
+  db,
+  type Course,
+  type CoursePreferences,
+  type Assignment,
+} from '../storage/db';
 
 export const COURSE_COLORS = [
   { name: 'Purple', value: '#4f2683' },
@@ -78,7 +83,12 @@ export async function saveCourseAssignments(
     async () => {
       if ((await db.coursePreferences.get(course.id))?.excluded) return false;
       await db.courses.put({ ...course, lastCapturedAt: capturedAt });
-      await db.assignments.bulkPut(assignments);
+      const existing = await db.assignments.bulkGet(
+        assignments.map((item) => item.key),
+      );
+      await db.assignments.bulkPut(
+        assignments.map((item, index) => ({ ...existing[index], ...item })),
+      );
       return true;
     },
   );

@@ -3,9 +3,9 @@ import { defineBackground } from 'wxt/utils/define-background';
 import {
   assignmentListCourseId,
   isAssignmentCapture,
-} from '../lib/assignments';
-import { saveCourseAssignments } from '../lib/courses';
-import { db } from '../lib/db';
+} from '../lib/assignments/capture';
+import { saveCourseAssignments } from '../lib/courses/preferences';
+import { db } from '../lib/storage/db';
 
 export default defineBackground(() => {
   browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
