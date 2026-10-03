@@ -25,6 +25,7 @@ import { shouldRefreshOnOpen } from '../../lib/brightspace/refresh';
 
 export default function App() {
   const courseDialog = useRef<HTMLDialogElement>(null);
+  const notificationDialog = useRef<HTMLDialogElement>(null);
   const [view, setView] = useState<'upcoming' | 'courses' | 'changes'>(
     location.hash === '#changes-heading' ? 'changes' : 'upcoming',
   );
@@ -219,6 +220,22 @@ export default function App() {
           <h1>Owlert</h1>
         </div>
         <nav className={styles.headerActions} aria-label="Owlert controls">
+          <button
+            type="button"
+            className={`${styles.iconButton} ${styles.notificationButton}`}
+            title="Notifications"
+            aria-label={`Notifications${unreadChanges ? `, ${unreadChanges} pending` : ''}`}
+            aria-haspopup="dialog"
+            aria-controls="notification-center"
+            onClick={() => notificationDialog.current?.showModal()}
+          >
+            <Icon name="bell" />
+            {unreadChanges > 0 && (
+              <span className={styles.notificationBadge} aria-hidden="true">
+                {unreadChanges > 99 ? '99+' : unreadChanges}
+              </span>
+            )}
+          </button>
           <button
             type="button"
             className={`${styles.iconButton} ${styles.headerSync} ${syncing ? styles.syncingIcon : ''}`}
@@ -482,6 +499,33 @@ export default function App() {
           </>
         )}
       </section>
+      <dialog
+        ref={notificationDialog}
+        id="notification-center"
+        className={styles.displayDialog}
+        aria-labelledby="notification-center-title"
+      >
+        <div className={styles.dialogHeader}>
+          <h2 id="notification-center-title">Notifications</h2>
+          <button
+            type="button"
+            className={styles.iconButton}
+            aria-label="Close notifications"
+            onClick={() => notificationDialog.current?.close()}
+          >
+            <Icon name="close" />
+          </button>
+        </div>
+        <ChangeFeed
+          notifications
+          changes={(data?.changes ?? []).filter((change) =>
+            includedCourses.some((course) => course.id === change.courseId),
+          )}
+          preferences={preferences}
+          trackedCourses={0}
+          totalCourses={0}
+        />
+      </dialog>
       <dialog
         ref={courseDialog}
         id="course-display"

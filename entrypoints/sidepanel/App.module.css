@@ -105,6 +105,23 @@
 .headerSync {
   color: #4f2683;
 }
+.notificationButton {
+  position: relative;
+}
+.notificationBadge {
+  position: absolute;
+  top: -3px;
+  right: -5px;
+  min-width: 15px;
+  padding: 1px 3px;
+  border: 2px solid #fff;
+  border-radius: 10px;
+  background: #4f2683;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 650;
+  line-height: 12px;
+}
 .syncingIcon svg {
   animation: syncSpin 1.2s linear infinite;
 }

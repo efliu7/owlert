@@ -15,20 +15,22 @@ export default function ChangeFeed({
   preferences,
   trackedCourses,
   totalCourses,
+  notifications = false,
 }: {
   changes: AssignmentChange[];
   preferences: Map<string, CoursePreferences>;
   trackedCourses: number;
   totalCourses: number;
+  notifications?: boolean;
 }) {
   const [saving, setSaving] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
-    if (location.hash === '#changes-heading') {
+    if (!notifications && location.hash === '#changes-heading') {
       heading.current?.scrollIntoView();
       heading.current?.focus({ preventScroll: true });
     }
-  }, []);
+  }, [notifications]);
   const [error, setError] = useState('');
   const ordered = [...changes].sort(
     (a, b) => b.detectedAt - a.detectedAt || (b.id ?? 0) - (a.id ?? 0),
@@ -43,7 +45,11 @@ export default function ChangeFeed({
         items.flatMap((item) => (item.id === undefined ? [] : [item.id])),
       );
     } catch {
-      setError('Could not mark changes as seen. Please try again.');
+      setError(
+        notifications
+          ? 'Could not dismiss notifications. Please try again.'
+          : 'Could not mark changes as seen. Please try again.',
+      );
     } finally {
       setSaving(false);
     }
@@ -105,12 +111,16 @@ export default function ChangeFeed({
                     type="button"
                     className={styles.seenButton}
                     disabled={saving}
-                    aria-label={`Mark ${change.kind === 'deadline' ? 'deadline change' : change.kind === 'renamed' ? 'name change' : 'new assignment'} for ${change.after.title} as seen`}
+                    aria-label={
+                      notifications
+                        ? `Dismiss notification for ${change.after.title}`
+                        : `Mark ${change.kind === 'deadline' ? 'deadline change' : change.kind === 'renamed' ? 'name change' : 'new assignment'} for ${change.after.title} as seen`
+                    }
                     onClick={() => {
                       void acknowledge([change]);
                     }}
                   >
-                    Mark as seen
+                    {notifications ? 'Dismiss' : 'Mark as seen'}
                   </button>
                 )}
               </div>
@@ -121,10 +131,19 @@ export default function ChangeFeed({
     );
   }
   return (
-    <section className={styles.changeFeed} aria-labelledby="changes-heading">
+    <section
+      className={styles.changeFeed}
+      aria-labelledby={
+        notifications ? 'notifications-heading' : 'changes-heading'
+      }
+    >
       <div className={styles.changeHeading}>
-        <h3 id="changes-heading" ref={heading} tabIndex={-1}>
-          Changes
+        <h3
+          id={notifications ? 'notifications-heading' : 'changes-heading'}
+          ref={heading}
+          tabIndex={-1}
+        >
+          {notifications ? 'Missed updates' : 'Changes'}
         </h3>
         {unread.length > 0 && (
           <button
@@ -135,26 +154,30 @@ export default function ChangeFeed({
               void acknowledge(unread);
             }}
           >
-            Mark all as seen
+            {notifications ? 'Dismiss all' : 'Mark all as seen'}
           </button>
         )}
       </div>
       {error && <p role="alert">{error}</p>}
       <p className={styles.changeStatus} role="status">
-        {unread.length
-          ? `${unread.length} unseen ${unread.length === 1 ? 'change' : 'changes'}.`
-          : trackedCourses
-            ? 'No unseen changes.'
-            : 'Sync courses to start tracking changes.'}
+        {notifications
+          ? unread.length
+            ? `${unread.length} pending ${unread.length === 1 ? 'notification' : 'notifications'}.`
+            : 'You’re all caught up.'
+          : unread.length
+            ? `${unread.length} unseen ${unread.length === 1 ? 'change' : 'changes'}.`
+            : trackedCourses
+              ? 'No unseen changes.'
+              : 'Sync courses to start tracking changes.'}
       </p>
-      {trackedCourses < totalCourses && (
+      {!notifications && trackedCourses < totalCourses && (
         <p className={styles.changeHint}>
           Tracking {trackedCourses} of {totalCourses} courses. Sync to start
           tracking the rest.
         </p>
       )}
       {unread.length > 0 && list(unread)}
-      {seen.length > 0 && (
+      {!notifications && seen.length > 0 && (
         <details className={styles.seenHistory}>
           <summary>Seen changes ({seen.length})</summary>
           {list(seen)}

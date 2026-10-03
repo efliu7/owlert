@@ -152,7 +152,12 @@ additional retrieval. See PRODUCT.md for the broader product direction.
 
 ## Change notifications
 
-The compact top bar holds refresh and **Preferences**. The default **Upcoming**
+The compact top bar holds **Notifications**, refresh and **Preferences**. The bell
+shows a pending count and opens saved updates, including missed popups. Opening
+or closing the list does not acknowledge updates. **Dismiss** and **Dismiss all**
+persist across reloads and clear the pending count; dismissed updates remain in
+the Changes view's seen history. This inbox works even with popup alerts disabled.
+The default **Upcoming**
 view lists future, synced deadlines chronologically. It does not infer deadlines
 from page labels or determine submission status. **Courses** keeps the course
 dropdowns and customization, while **Changes** shows the change feed and an unseen
