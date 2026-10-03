@@ -82,3 +82,183 @@
   font-size: 11px;
   text-align: center;
 }
+.courses {
+  display: grid;
+  gap: 14px;
+  margin-top: 20px;
+}
+.course {
+  border: 1px solid #dfd5eb;
+  border-left: 4px solid #4f2683;
+  border-radius: 12px;
+  overflow: clip;
+  background: #faf8fd;
+}
+.courseSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px;
+  cursor: pointer;
+  list-style: none;
+  background: #f3edf9;
+}
+.courseSummary::-webkit-details-marker {
+  display: none;
+}
+.courseSummary:hover {
+  background: #ece3f5;
+}
+.courseSummary:focus-visible {
+  outline: 2px solid #4f2683;
+  outline-offset: -3px;
+  border-radius: 8px;
+}
+.courseHeading {
+  min-width: 0;
+}
+.courseCount {
+  display: inline-block;
+  margin-top: 8px;
+  color: #686177;
+  font-size: 11px;
+}
+.chevron {
+  flex-shrink: 0;
+  color: #4f2683;
+  transition: transform 150ms ease;
+}
+.course[open] > summary .chevron {
+  transform: rotate(180deg);
+}
+.course[open] > summary {
+  border-bottom: 1px solid #dfd5eb;
+}
+.courseBody {
+  padding: 16px;
+}
+.courseMeta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px 16px;
+  align-items: baseline;
+}
+.courseMeta > a {
+  font-size: 12px;
+  font-weight: 600;
+}
+.card .emptyCourse {
+  font-size: 13px;
+  margin-top: 16px;
+}
+.course h3 {
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+  color: #3f2065;
+  overflow-wrap: anywhere;
+}
+.course a {
+  color: #4f2683;
+  text-decoration: none;
+}
+.course a:hover {
+  text-decoration: underline;
+}
+.course a:focus-visible {
+  outline: 2px solid #4f2683;
+  outline-offset: 3px;
+}
+.course .timestamp {
+  font-size: 11px;
+  margin: 0;
+}
+.assignments {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+  display: grid;
+  gap: 10px;
+}
+.assignments li {
+  padding: 14px;
+  border: 1px solid #e5dfed;
+  border-radius: 10px;
+  background: white;
+}
+.assignments li > a {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  display: block;
+  overflow-wrap: anywhere;
+}
+.assignments li p {
+  font-size: 12px;
+  margin-top: 4px;
+}
+.assignments li .dueDate {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #f0e9f8;
+  color: #4f2683;
+  margin-top: 10px;
+}
+.assignments li .noDueDate {
+  color: #767080;
+  margin-top: 8px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chevron {
+    transition: none;
+  }
+}
+@media (max-width: 380px) {
+  .panel {
+    padding: 20px 12px;
+  }
+  .card {
+    padding: 18px 12px;
+  }
+  .courseSummary,
+  .courseBody {
+    padding: 12px;
+  }
+}
+.syncButton {
+  border: 0;
+  background: #4f2683;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.syncButton:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+.syncButton:focus-visible {
+  outline: 2px solid #4f2683;
+  outline-offset: 3px;
+}
+.card .syncStatus {
+  font-size: 12px;
+  margin: 12px 0 20px;
+}
+.syncErrors {
+  background: #fff4e4;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+.syncErrors ul {
+  padding-left: 18px;
+  font-size: 12px;
+  line-height: 1.6;
+}

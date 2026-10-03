@@ -15,6 +15,7 @@ export default defineConfig({
     description: 'Your courses change. Stay ahead.',
     minimum_chrome_version: '116',
     permissions: ['storage', 'sidePanel'],
+    host_permissions: ['https://westernu.brightspace.com/*'],
     action: { default_title: 'Open Owlert' },
   },
 });
