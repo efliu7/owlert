@@ -7,6 +7,7 @@ import {
   sortCourses,
   updateCoursePreferences,
   reorderCourse,
+  ensureCourseColors,
 } from './preferences';
 import { performSync } from '../brightspace/sync';
 
@@ -37,6 +38,47 @@ afterAll(async () => {
 });
 
 describe('course preferences', () => {
+  it('backfills distinct defaults beyond the swatches while preserving preferences and reload stability', async () => {
+    await db.courses.bulkPut(
+      Array.from({ length: 20 }, (_, index) => ({
+        ...course,
+        id: String(index),
+      })),
+    );
+    await updateCoursePreferences('0', { color: '#1D4ED8', pinned: true });
+    await updateCoursePreferences('1', { excluded: true, sortOrder: 7 });
+    await Promise.all([ensureCourseColors(), ensureCourseColors()]);
+    const saved = await db.coursePreferences.toArray();
+    expect(saved).toHaveLength(20);
+    expect(new Set(saved.map((item) => item.color!.toLowerCase())).size).toBe(
+      20,
+    );
+    expect(saved.every((item) => /^#[0-9a-f]{6}$/i.test(item.color!))).toBe(
+      true,
+    );
+    expect(await db.coursePreferences.get('0')).toEqual({
+      courseId: '0',
+      color: '#1D4ED8',
+      pinned: true,
+    });
+    expect(await db.coursePreferences.get('1')).toMatchObject({
+      excluded: true,
+      sortOrder: 7,
+    });
+    db.close();
+    await db.open();
+    await ensureCourseColors();
+    expect(await db.coursePreferences.toArray()).toEqual(saved);
+    await saveCourseAssignments({ ...course, id: 'new' }, [], 200);
+    const added = await db.coursePreferences.get('new');
+    expect(added?.color).toBeDefined();
+    expect(
+      saved.some((item) => item.color!.toLowerCase() === added!.color),
+    ).toBe(false);
+    for (const item of saved) {
+      expect(await db.coursePreferences.get(item.courseId)).toEqual(item);
+    }
+  });
   it('persists a dragged order alongside colors and pins through database reopening and capture', async () => {
     const courses = [
       { ...course, id: '1', name: 'Alpha' },
@@ -156,6 +198,9 @@ describe('course preferences', () => {
     });
     expect(fetcher).toHaveBeenCalledTimes(2);
     expect(await db.courses.get('123')).toBeDefined();
+    expect((await db.coursePreferences.get('123'))!.color).toMatch(
+      /^#[0-9a-f]{6}$/,
+    );
     expect((await db.coursePreferences.get('123'))!.pinned).toBe(true);
   });
   it('rejects a fetched update if the course was excluded while the request was running', async () => {

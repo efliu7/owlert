@@ -1,6 +1,7 @@
 import { BRIGHTSPACE_ORIGIN } from '../assignments/capture';
 import { db, type SyncedAssignment, type Course } from '../storage/db';
 import { saveSyncedAssignments } from '../assignments/changes';
+import { ensureCourseColors } from '../courses/preferences';
 
 type Fetch = typeof globalThis.fetch;
 interface Version {
@@ -176,11 +177,12 @@ export async function performSync(
 ): Promise<SyncResult> {
   onProgress({ completed: 0, total: 0 });
   const { courses, le } = await discoverCourses(fetcher);
-  await db.transaction('rw', db.courses, async () => {
+  await db.transaction('rw', db.courses, db.coursePreferences, async () => {
     for (const course of courses) {
       const existing = await db.courses.get(course.id);
       await db.courses.put({ ...existing, ...course });
     }
+    await ensureCourseColors();
   });
   const result: SyncResult = {
     courses: 0,

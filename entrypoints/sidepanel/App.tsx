@@ -11,6 +11,7 @@ import {
   reorderCourse,
   sortCourses,
   updateCoursePreferences,
+  ensureCourseColors,
 } from '../../lib/courses/preferences';
 import CourseCard from './CourseCard';
 import Icon from './Icon';
@@ -28,6 +29,7 @@ export default function App() {
     location.hash === '#changes-heading' ? 'changes' : 'upcoming',
   );
   const autoSyncAttempted = useRef(false);
+  const colorsInitialized = useRef(false);
   const [toast, setToast] = useState<AssignmentChange[] | null>(null);
   const dismissToast = useCallback(() => setToast(null), []);
   const [syncing, setSyncing] = useState(false);
@@ -169,6 +171,15 @@ export default function App() {
       };
     }
   });
+  useEffect(() => {
+    if (!data || data.error || colorsInitialized.current) return;
+    colorsInitialized.current = true;
+    void ensureCourseColors().catch(() => {
+      setPreferenceError(
+        'Could not save default course colors. Reopen Owlert to try again.',
+      );
+    });
+  }, [data]);
   useEffect(() => {
     if (data?.notificationSettings?.inAppNotifications === false)
       dismissToast();

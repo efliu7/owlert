@@ -63,6 +63,10 @@ Other commands:
 
 ## Course preferences
 
+Courses receive different default colors automatically, including saved courses
+without a chosen color. Colors stay consistent across reloads and syncs; your
+custom colors are preserved.
+
 Click a course header's **palette icon** to choose a preset or custom color, or its **pin icon**
 to pin it. Open **Preferences** in the top bar, then **Choose courses**
 for including or excluding courses. Hold and drag a course header to reorder it;

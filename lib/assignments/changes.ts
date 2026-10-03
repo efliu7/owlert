@@ -5,6 +5,7 @@ import {
   type SyncedAssignment,
   type AssignmentChange,
 } from '../storage/db';
+import { ensureCourseColors } from '../courses/preferences';
 
 // Only complete, validated API responses call this function. Page captures never
 // establish or alter this baseline, and missing assignments never imply deletion.
@@ -59,6 +60,7 @@ export async function saveSyncedAssignments(
         previous.set(assignment.key, after);
       }
       await db.courses.put({ ...course, lastCapturedAt: capturedAt });
+      await ensureCourseColors();
       await db.assignments.bulkPut(assignments);
       await db.courseBaselines.put({
         courseId: course.id,
