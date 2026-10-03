@@ -3,12 +3,15 @@
 Your courses change. Stay ahead.
 
 A Chrome Manifest V3 extension for a local-first Western Brightspace course
-briefing. Log into Western Brightspace and click **Sync courses** in Owlert to
+briefing. Log into Western Brightspace and open Owlert to
 collect assignments across all active, accessible courses. Visiting an Assignments
 page also captures its visible rows. Captures are saved locally
 and remain available between browser sessions. Successful syncs track new
-assignments, renamed assignments, and exact deadline changes. Chrome notifications
-and scheduled reminders are not implemented yet.
+assignments, renamed assignments, and exact deadline changes. Styled in-window
+alerts summarize unseen changes after sync, with optional desktop
+notifications. Owlert refreshes once on open if saved data is at least 15 minutes old.
+Periodic background sync and
+scheduled deadline reminders are not implemented yet.
 
 ## Requirements
 
@@ -61,7 +64,7 @@ Other commands:
 ## Course preferences
 
 Click a course header's **palette icon** to choose a preset or custom color, or its **pin icon**
-to pin it. The **Course display icon** beside Sync courses opens a separate menu
+to pin it. Open **Preferences** in the top bar, then **Choose courses**
 for including or excluding courses. Hold and drag a course header to reorder it;
 the drop indicator appears only while dragging. Pinned courses stay first, and
 dragging reorders courses within the pinned or unpinned group. You can also focus
@@ -90,21 +93,23 @@ restarts.
 - `lib/courses/`: course preferences, ordering, and page-capture storage.
 - `lib/storage/`: shared Dexie database and stored data types for extension contexts.
 - `lib/ui/`: shared color and readability utilities.
+- `lib/notifications/`: grouped change alerts, persistent delivery tracking, and Chrome click handling.
 - Tests live beside their corresponding modules in each feature folder.
 - `vitest.config.ts`: test runner configuration.
 
 Stack: WXT, TypeScript, React, CSS Modules, Dexie/IndexedDB, Vitest, and Prettier.
 Dependency versions are recorded in `package-lock.json`; use `ci` to reproduce them.
 
-The extension requests `sidePanel`, `storage`, and host access to
+The extension requests `sidePanel`, `storage`, `notifications`, and host access to
 `https://westernu.brightspace.com/*` for authenticated, read-only API requests.
-Its content script runs only on Western Brightspace assignment-list pages. Alarm and notification permissions
-will be added with reminders. No backend, API keys, or environment variables are
+Its content script runs only on Western Brightspace assignment-list pages. Alarm
+permission will be added with scheduled reminders. No backend, API keys, or environment variables are
 required. Only course and assignment fields are saved; passwords, grades,
 submission details, and attachment contents are not saved.
 
 After updating the extension, reload it in `chrome://extensions` and reopen the
-side panel. Click **Sync courses**; no course-page visits are needed. Enrollment
+side panel. Owlert connects on first open and refreshes stale data on later opens;
+use the refresh icon to sync immediately. No course-page visits are needed. Enrollment
 pagination is followed, and the assignment API returns the full folder list for
 each course. The scan uses your existing login session and reports partial failures.
 If the session expires, log back into Brightspace and sync again.
@@ -137,6 +142,44 @@ alerts. Baseline updates, saved assignments, and change events commit together.
 
 ## Next milestone
 
-Validate change tracking with real course updates, then add configurable Chrome
-notifications and deadline reminders. Instruction and attachment changes require
+Validate change tracking with real course updates, then add periodic background
+sync with expired-session handling and configurable deadline reminders. Instruction and attachment changes require
 additional retrieval. See PRODUCT.md for the broader product direction.
+
+## Change notifications
+
+The compact top bar holds refresh and **Preferences**. The default **Upcoming**
+view lists future, synced deadlines chronologically. It does not infer deadlines
+from page labels or determine submission status. **Courses** keeps the course
+dropdowns and customization, while **Changes** shows the change feed and an unseen
+count. Preferences holds alerts and optional course exclusions. Course palette
+and pin actions appear on hover or keyboard focus (always visible on touch).
+The panel connects on first open and refreshes included courses whose baselines
+are at least 15 minutes old. Fresh data opens immediately from local storage.
+It attempts refresh once per panel opening; an expired session requires signing
+back into Brightspace and using refresh. No continuous polling runs.
+
+**Show alerts inside Owlert** defaults to on. After sync, a course-colored
+card appears inside the panel or Owlert tab with the assignment, change details,
+and a **Review changes** action. The card dismisses after 18 seconds, pauses while
+hovered or focused, and can be dismissed manually. Reviewing focuses the change
+feed. Dismissal and review do not acknowledge changes. In-window delivery state
+persists to prevent duplicate alerts after sync or reload.
+
+Open **Preferences** and enable **Also show desktop notifications** for optional
+system alerts. This setting defaults to off and persists locally. After sync,
+Owlert sends at most one silent, nonpersistent Chrome notification, highlighting
+deadline changes with their old/new dates and summarizing any additional changes.
+Click the notification to open Owlert's change feed in a tab. Opening or dismissing
+a notification does not mark changes as seen; use the feed's acknowledgement controls.
+
+Only unseen, previously unnotified events from successfully synced, included
+courses are eligible. Delivery claims persist across browser sessions, so repeated
+syncs do not send the same alerts again. Chrome API failures release the claim for
+a later successful sync to retry. Disabling notifications clears the active popup.
+Changes remain in the feed even if Chrome or the operating system blocks popups.
+
+Events are claimed before delivery to avoid duplicates across worker restarts.
+A worker crash between claiming and delivery can miss a popup; its change remains
+in the feed. Chrome acceptance also does not guarantee the operating system
+displayed an alert. No polling, alarms, or upcoming-deadline reminders run yet.

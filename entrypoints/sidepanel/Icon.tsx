@@ -1,7 +1,7 @@
 export default function Icon({
   name,
 }: {
-  name: 'palette' | 'pin' | 'settings' | 'close' | 'chevron';
+  name: 'palette' | 'pin' | 'settings' | 'close' | 'chevron' | 'bell' | 'sync';
 }) {
   return (
     <svg
@@ -38,6 +38,18 @@ export default function Icon({
         </>
       )}
       {name === 'close' && <path d="m6 6 12 12M6 18 18 6" />}
+      {name === 'bell' && (
+        <>
+          <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z" />
+          <path d="M10 21h4" />
+        </>
+      )}
+      {name === 'sync' && (
+        <>
+          <path d="M20 7v5h-5M4 17v-5h5" />
+          <path d="M6 7a7 7 0 0 1 12-1l2 3M18 17a7 7 0 0 1-12 1l-2-3" />
+        </>
+      )}
       {name === 'chevron' && <path d="m6 9 6 6 6-6" />}
     </svg>
   );

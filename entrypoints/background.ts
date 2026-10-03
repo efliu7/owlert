@@ -6,9 +6,37 @@ import {
 } from '../lib/assignments/capture';
 import { saveCourseAssignments } from '../lib/courses/preferences';
 import { db } from '../lib/storage/db';
+import {
+  notifyAfterSync,
+  registerNotificationClicks,
+} from '../lib/notifications/chrome';
 
 export default defineBackground(() => {
+  registerNotificationClicks();
   browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message?.type === 'notifications:sync-complete') {
+      const ids: unknown = message.courseIds;
+      if (
+        sender.url?.split(/[?#]/)[0] !==
+          browser.runtime.getURL('/sidepanel.html') ||
+        !Array.isArray(ids) ||
+        ids.length > 1000 ||
+        !ids.every((id) => typeof id === 'string' && /^\d+$/.test(id))
+      ) {
+        sendResponse({ ok: false, error: 'Invalid notification request' });
+        return;
+      }
+      void notifyAfterSync(ids).then(
+        () => sendResponse({ ok: true }),
+        () =>
+          sendResponse({
+            ok: false,
+            error:
+              'Could not send change notifications. Your changes are saved in the feed.',
+          }),
+      );
+      return true;
+    }
     if (message?.type === 'courses:can-capture') {
       const courseId = sender.url ? assignmentListCourseId(sender.url) : null;
       if (!courseId) {

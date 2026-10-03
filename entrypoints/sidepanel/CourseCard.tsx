@@ -267,12 +267,6 @@ export default function CourseCard({
           <a href={course.url} target="_blank" rel="noreferrer">
             Open course ↗
           </a>
-          <p className={styles.timestamp}>
-            Last captured{' '}
-            {course.lastCapturedAt
-              ? new Date(course.lastCapturedAt).toLocaleString()
-              : 'unknown'}
-          </p>
         </div>
         {assignments.length === 0 ? (
           <p className={styles.emptyCourse}>

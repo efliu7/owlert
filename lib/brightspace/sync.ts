@@ -32,6 +32,7 @@ export interface SyncResult {
   assignments: number;
   failures: string[];
   skipped: number;
+  syncedCourseIds: string[];
 }
 
 async function json<T>(path: string, fetcher: Fetch): Promise<T> {
@@ -186,6 +187,7 @@ export async function performSync(
     assignments: 0,
     failures: [],
     skipped: 0,
+    syncedCourseIds: [],
   };
   for (let index = 0; index < courses.length; index++) {
     const course = courses[index]!;
@@ -210,6 +212,7 @@ export async function performSync(
         continue;
       }
       result.courses++;
+      result.syncedCourseIds.push(course.id);
       result.assignments += assignments.length;
     } catch (error) {
       result.failures.push(

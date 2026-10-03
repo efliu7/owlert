@@ -43,6 +43,15 @@ export interface AssignmentChange {
   after: AssignmentSnapshot;
   detectedAt: number;
   seenAt: number | null;
+  notificationBatchId?: string;
+  notifiedAt?: number;
+  inAppNotifiedAt?: number;
+}
+
+export interface NotificationSettings {
+  id: 'notifications';
+  changeNotifications: boolean;
+  inAppNotifications?: boolean;
 }
 
 export interface CoursePreferences {
@@ -60,6 +69,7 @@ export const db = new Dexie('owlert') as Dexie & {
   coursePreferences: EntityTable<CoursePreferences, 'courseId'>;
   courseBaselines: EntityTable<CourseBaseline, 'courseId'>;
   assignmentChanges: EntityTable<AssignmentChange, 'id'>;
+  notificationSettings: EntityTable<NotificationSettings, 'id'>;
 };
 
 db.version(1).stores({ courses: 'id, name' });
@@ -72,3 +82,4 @@ db.version(4).stores({
   courseBaselines: 'courseId',
   assignmentChanges: '++id, courseId, detectedAt',
 });
+db.version(5).stores({ notificationSettings: 'id' });

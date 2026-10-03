@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react';
+import { useEffect, useState, useRef, type CSSProperties } from 'react';
 import type { AssignmentChange, CoursePreferences } from '../../lib/storage/db';
 import { markChangesSeen } from '../../lib/assignments/changes';
 import { courseTextColor } from '../../lib/ui/colors';
@@ -22,6 +22,13 @@ export default function ChangeFeed({
   totalCourses: number;
 }) {
   const [saving, setSaving] = useState(false);
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (location.hash === '#changes-heading') {
+      heading.current?.scrollIntoView();
+      heading.current?.focus({ preventScroll: true });
+    }
+  }, []);
   const [error, setError] = useState('');
   const ordered = [...changes].sort(
     (a, b) => b.detectedAt - a.detectedAt || (b.id ?? 0) - (a.id ?? 0),
@@ -116,7 +123,9 @@ export default function ChangeFeed({
   return (
     <section className={styles.changeFeed} aria-labelledby="changes-heading">
       <div className={styles.changeHeading}>
-        <h3 id="changes-heading">Since your last check</h3>
+        <h3 id="changes-heading" ref={heading} tabIndex={-1}>
+          Changes
+        </h3>
         {unread.length > 0 && (
           <button
             type="button"
@@ -140,8 +149,8 @@ export default function ChangeFeed({
       </p>
       {trackedCourses < totalCourses && (
         <p className={styles.changeHint}>
-          The first successful sync for each course establishes its starting
-          point. Tracking {trackedCourses} of {totalCourses} courses.
+          Tracking {trackedCourses} of {totalCourses} courses. Sync to start
+          tracking the rest.
         </p>
       )}
       {unread.length > 0 && list(unread)}

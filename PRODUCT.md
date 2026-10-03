@@ -51,10 +51,18 @@ revisit seen history. The first successful sync establishes a starting point.
 Page captures and failed syncs cannot overwrite the baseline, and absent
 assignments do not produce deletion alerts.
 
-Next, validate this feed with real course updates and extend collection to
-assignment requirements and attachments where useful.
-Add configurable Chrome notifications on top of reliable change detection and
-deadline scheduling.
+Manual sync now shows a styled, course-colored alert inside Owlert, with optional
+silent grouped desktop notifications. Both prioritize deadline changes, exclude
+acknowledged and hidden-course events, and open or focus the feed. Delivery state
+and channel preferences persist across restarts. Notifications do not acknowledge
+feed entries. The panel now defaults to a compact upcoming-deadline list, with
+separate Courses and Changes views. Refresh and a single Preferences menu live in
+the top bar. It connects on first open and refreshes data at least 15 minutes old
+on later opens, without continuous polling or a setup flow beyond Brightspace login.
+
+Next, validate this feed with real course updates and add periodic background
+sync with expired-session handling. Extend collection to assignment requirements
+and attachments where useful, and add configurable deadline scheduling.
 
 Validate with real student examples: did Owlert surface information that changed
 what the student did, which they would otherwise have missed or spent time checking?
